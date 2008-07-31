@@ -22,16 +22,24 @@ module Ketlai
         
         def has_one_image(association_id, options = {})
           has_one association_id, options
-          define_has_x_method(association_id)
+          define_has_one_method(association_id)
         end
         
         def has_many_images(association_id, options = {})
           has_many association_id, options
-          define_has_x_method(association_id)
+          define_has_many_method(association_id)
         end
         
         protected
-          def define_has_x_method(association_id)
+          def define_has_one_method(association_id)
+            define_method("#{association_id}=") do |data|
+              return unless data.is_a?(StringIO) or data.is_a?(ActionController::UploadedTempfile)
+              association = self.class.reflect_on_association(association_id)
+              self.send("build_#{association_id}", :uploaded_data => data)
+            end
+          end
+          
+          def define_has_many_method(association_id)
             define_method("#{association_id}=") do |data|
               return if data.empty? or data[0].blank?
               association = self.class.reflect_on_association(association_id)
