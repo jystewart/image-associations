@@ -19,6 +19,7 @@ require File.join(File.dirname(__FILE__), *%w[../lib/image_associations])
 class ActiveRecordStub
   class << self
     def has_many(name, *args); end
+    def has_one(name, *args); end
     def belongs_to(name, *args); end
   end
   
