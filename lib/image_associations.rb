@@ -6,6 +6,10 @@ module Ketlai
         base.extend(ClassMethods)
       end
       
+      def valid_file?(data)
+        data.is_a?(StringIO) or (defined?(ActionController) and data.is_a?(ActionController::UploadedTempfile))
+      end
+      
       module ClassMethods
         def belongs_to_image(association_id, options = {})
           belongs_to association_id, options
@@ -31,9 +35,10 @@ module Ketlai
         end
         
         protected
+          
           def define_has_one_method(association_id)
             define_method("#{association_id}=") do |data|
-              return unless data.is_a?(StringIO) or data.is_a?(ActionController::UploadedTempfile)
+              return unless valid_file?(data)
               association = self.class.reflect_on_association(association_id)
               self.send("build_#{association_id}", :uploaded_data => data)
             end
@@ -44,7 +49,7 @@ module Ketlai
               return if data.empty? or data[0].blank?
               association = self.class.reflect_on_association(association_id)
               data.each do |value|
-                if value.is_a?(StringIO) or (defined?(ActionController) and value.is_a?(ActionController::UploadedTempfile))
+                if valid_file?(value)
                   self.send(association_id).build(:uploaded_data => value)
                 end
               end
