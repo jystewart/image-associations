@@ -1,13 +1,61 @@
 ImageAssociations
 =================
 
-Introduction goes here.
+One thing I frequently find myself doing is associating multiple images with a given model. My news story might have a banner image, and a series of other attachments, which I could specify with:
+
+class Story < ActiveRecord::Base
+  belongs_to :banner_image
+  has_many :story_attachments
+end
+
+class BannerImage < ActiveRecord::Base
+  has_attachment # I'm using attachment_fu
+end
+
+class StoryAttachment < ActiveRecord::Base
+  has_attachment # I'm using attachment_fu
+end
+
+(or I could use has_one in place of belongs_to there, your tastes/requirements may vary)
+
+What quickly becomes a pain is assigning the images to the models, and having rejected fat controllers I often end up writing accessors on my models to manage that for me:
+
+class Story < ActiveRecord::Base
+  belongs_to :banner_image
+  has_many :story_attachments
+  
+  def banner_image(data)
+    if valid_file?(data)
+      self.banner_image = BannerImage.create(:uploaded_data => data)
+    end
+  end
+  
+  def valid_file?
+    # etc.
+  end
+end
+
+That quickly gets dull, so I've wrapped it up in a plugin I'm calling image_associations. With that I can write:
+
+class Story < ActiveRecord::Base
+  belongs_to_image :banner_image
+  has_many_images :story_attachments
+end
+
+and get the accessors for free.
 
 
 Example
 =======
 
-Example goes here.
+class Story < ActiveRecord::Base
+  belongs_to_image :banner_image
+  has_many_images :story_attachments
+end
 
+s = Story.new
+s.story_attachments = [file_one, file_two]
+s.banner_image = file_tree
+s.save
 
-Copyright (c) 2008 [name of plugin creator], released under the MIT license
+Copyright (c) 2008 James Stewart, released under the MIT license
