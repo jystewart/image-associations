@@ -12,7 +12,7 @@ module Ketlai
           define_method("#{association_id}=") do |value|
             return if value.blank?
             association = self.class.reflect_on_association(association_id)
-            if value.is_a?(StringIO) or value.is_a?(ActionController::UploadedTempfile)
+            if value.is_a?(StringIO) or (defined?(ActionController) and value.is_a?(ActionController::UploadedTempfile))
               image_class = association.class_name.constantize
               value = image_class.create!(:uploaded_data => value)
             end
@@ -26,7 +26,7 @@ module Ketlai
             return if data.empty? or data[0].blank?
             association = self.class.reflect_on_association(association_id)
             data.each do |value|
-              if value.is_a?(StringIO) or value.is_a?(ActionController::UploadedTempfile)
+              if value.is_a?(StringIO) or (defined?(ActionController) and value.is_a?(ActionController::UploadedTempfile))
                 self.send(association_id).build(:uploaded_data => value)
               end
             end
