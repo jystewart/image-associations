@@ -14,11 +14,12 @@ module Ketlai
         def belongs_to_image(association_id, options = {})
           belongs_to association_id, options
           define_method("#{association_id}=") do |value|
-            return if value.blank?
+            this_file = file_value(value)
+            return if this_file.blank?
             association = self.class.reflect_on_association(association_id)
-            if value.is_a?(StringIO) or (defined?(ActionController) and value.is_a?(ActionController::UploadedTempfile))
+            if this_file.is_a?(StringIO) or (defined?(ActionController) and this_file.is_a?(ActionController::UploadedTempfile))
               image_class = association.class_name.constantize
-              value = image_class.create!(:uploaded_data => value)
+              value = image_class.create!(:uploaded_data => this_file)
             end
             write_attribute association.association_foreign_key, value.id
           end
@@ -36,21 +37,28 @@ module Ketlai
         
         protected
           
+          def file_value(data)
+            data.is_a?(Hash) ? data['uploaded_data'] : data
+          end
+          
           def define_has_one_method(association_id)
             define_method("#{association_id}=") do |data|
-              return unless valid_file?(data)
+              this_file = file_value(data)
+              return unless valid_file?(this_file)
               association = self.class.reflect_on_association(association_id)
-              self.send("build_#{association_id}", :uploaded_data => data)
+              self.send("build_#{association_id}", :uploaded_data => this_file)
             end
           end
           
           def define_has_many_method(association_id)
             define_method("#{association_id}=") do |data|
-              return if data.empty? or data[0].blank?
+              return if data.empty? or (data[0].respond_to?(:blank?) and data[0].blank?) or (data[0].is_a?(Hash) and data[0]['uploaded_data'].blank?)
               association = self.class.reflect_on_association(association_id)
               data.each do |value|
-                if valid_file?(value)
-                  self.send(association_id).build(:uploaded_data => value)
+                this_file = file_value(value)
+                
+                if valid_file?(this_file)
+                  self.send(association_id).build(:uploaded_data => this_file)
                 end
               end
             end
